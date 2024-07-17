@@ -87,26 +87,50 @@ app.put("/movies/:id", async (req, res) => {
 
 app.delete('/movies/:id', async (req, res) => {
     const id = Number(req.params.id);
- 
- 
-    try{
-      const movie = await prisma.movie.findUnique({
-      where: { id }})
- 
-  
- 
-      if (!movie) {
-         return res.status(404).send({ message: 'Filme não encontrado' });
-      }
- 
-        await prisma.movie.delete({ where: { id }});
-    
-      }catch(error) {
+
+    try {
+        const movie = await prisma.movie.findUnique({
+            where: { id }
+        })
+
+
+
+        if (!movie) {
+            return res.status(404).send({ message: 'Filme não encontrado' });
+        }
+
+        await prisma.movie.delete({ where: { id } });
+
+    } catch (error) {
         res.status(500).send({ message: 'Falha ao remover o registro' });
-      }
-    
-  res.status(200).send({ message: 'Filme removido com sucesso' });
- });
+    }
+
+    res.status(200).send({ message: 'Filme removido com sucesso' });
+});
+
+app.get("/movies/:genreName", async (req, res) => {
+    try {
+        const moviesFilteredByGenreName = await prisma.movie.findMany({
+            include: {
+                genres: true,
+                languages: true
+            }, // O includes faz com que os gêneros e as linguagens não sejam mostradas apenas com o ID e sim com o nome respectivo ao filme
+
+            where: {
+                genres: {
+                    name: {
+                        equals: req.params.genreName, //busca o nome exatamente igual ao que foi digitado
+                        mode: 'insensitive'
+                    }
+                }
+            }
+        });
+
+        res.status(200).send(moviesFilteredByGenreName)
+    } catch(error){
+        res.status(500).send({ message: 'Falha ao filtar o filme' });
+    }
+})
 
 app.listen(port, () => {
     console.log(`Servidor em execução na porta ${port}`);
